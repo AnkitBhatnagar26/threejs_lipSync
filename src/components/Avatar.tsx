@@ -4,6 +4,7 @@ Command: npx gltfjsx@6.5.3 public/models/developer.glb -o src/components/Avatar.
 */
 
 import * as THREE from "three";
+import { JSX } from "react";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useFrame, useGraph, useLoader } from "@react-three/fiber";
 import { useAnimations, useFBX, useGLTF } from "@react-three/drei";
@@ -65,9 +66,13 @@ export function Avatar(props: JSX.IntrinsicElements["group"]) {
     },
   });
 
+  const [animation, setAnimation] = useState("Idle");
+
   const audio = useMemo(() => new Audio(`/audios/${script}.mp3`), [script]);
   const jsonFile = useLoader(THREE.FileLoader, `audios/${script}.json`);
-  const lipsync = JSON.parse(jsonFile);
+  const lipsync = JSON.parse(
+    typeof jsonFile === "string" ? jsonFile : new TextDecoder().decode(jsonFile)
+  );
 
   useFrame(() => {
     const currentAudioTime = audio.currentTime;
@@ -158,9 +163,6 @@ export function Avatar(props: JSX.IntrinsicElements["group"]) {
     }
   });
 
-  const [animation, setAnimation] = useState("Idle");
-  const [animationIndex, setAnimationIndex] = useState(0);
-
   useEffect(() => {
     console.log(playAudio, "playAudio");
     nodes.Wolf3D_Head.morphTargetInfluences[
@@ -191,7 +193,7 @@ export function Avatar(props: JSX.IntrinsicElements["group"]) {
 
   const { scene } = useGLTF("/models/developer.glb");
   const clone = React.useMemo(() => SkeletonUtils.clone(scene), [scene]);
-  const { nodes, materials } = useGraph(clone) as GLTFResult;
+  const { nodes, materials } = useGraph(clone) as unknown as GLTFResult;
 
   const { animations: idleAnimation } = useFBX("/animations/idle.fbx");
   // const { animations: bowAnimation } = useFBX(
@@ -211,8 +213,8 @@ export function Avatar(props: JSX.IntrinsicElements["group"]) {
   // talkingAnimation[0].name = "Talking";
   angryAnimation[0].name = "Angry";
 
-  const group = useRef();
-  const { actions, clips, mixer, ref, names } = useAnimations(
+  const group = useRef<THREE.Group>(null);
+  const { actions } = useAnimations(
     [
       idleAnimation[0],
       // bowAnimation[0],
@@ -237,12 +239,19 @@ export function Avatar(props: JSX.IntrinsicElements["group"]) {
   useEffect(() => {
     actions[animation]?.reset().fadeIn(0.5).play();
 
-    return () => actions[animation]?.fadeOut(0.5);
+    return () => {
+      actions[animation]?.fadeOut(0.5);
+    };
   }, [animation]);
 
   useFrame((state) => {
     if (headFollow) {
-      group.current.getObjectByName("Head").lookAt(state.camera.position);
+      if (group.current) {
+        const head = group.current.getObjectByName("Head");
+        if (head) {
+          head.lookAt(state.camera.position);
+        }
+      }
     }
   });
 

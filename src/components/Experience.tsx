@@ -10,10 +10,10 @@ export const Experience = () => {
       <OrbitControls />
       <Avatar position={[0, -3, 5]} scale={2} />
       <Environment preset="sunset" />
-      {/* <mesh>
+      <mesh>
         <planeGeometry args={[viewport.width, viewport.height]} />
         <meshBasicMaterial map={texture} />
-      </mesh> */}
+      </mesh>
     </>
   );
 };
